@@ -42,12 +42,11 @@ extension Config {
                     "config.json can't be read (\(reason)). Until it is fixed, amanu keeps to "
                         + "the settings it last read from it — its defaults, with auto-record "
                         + "off, if it never could — and keeps recording, but holds transcription "
-                        + "and summaries, sends no usage statistics, and saves no changed settings.",
+                        + "and summaries, and saves no changed settings.",
                     "config.json не читается (\(reason)). Пока файл не исправлен, amanu держится "
                         + "настроек, прочитанных из него в последний раз (а если не смогла "
                         + "прочитать ни разу — настроек по умолчанию с выключенной автозаписью), "
-                        + "и продолжает записывать, но расшифровка и саммари ждут, статистика не "
-                        + "отправляется, а изменённые настройки не сохраняются.")
+                        + "и продолжает записывать, но расшифровка и саммари ждут, а изменённые настройки не сохраняются.")
             case .unusable(let key, let found, let expected):
                 return localised(
                     "\(key) in config.json is \(found), which amanu can't use: it expects "

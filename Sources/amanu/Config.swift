@@ -558,8 +558,7 @@ enum Config {
     ///
     /// "No file" and "a file nobody can parse" used to be one answer, and every
     /// getter fell back to its default for both. For no file that is right.
-    /// For a broken one it switched analytics back on for somebody who had
-    /// turned it off and sent meetings to the cloud for somebody who had
+    /// For a broken one it sent meetings to the cloud for somebody who had
     /// chosen a local engine — and the next write from any window replaced
     /// the whole file with the one key it was changing, which is how a stray
     /// comma would have cost somebody every setting they had.
@@ -769,7 +768,6 @@ enum Config {
         case .unchanged: return true
         case .written:
             NotificationCenter.default.post(name: didChange, object: nil)
-            Analytics.settingChanged(path: path, value: value)
             return true
         }
     }

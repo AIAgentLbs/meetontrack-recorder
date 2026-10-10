@@ -14,7 +14,6 @@ import Foundation
 struct LLMBackend: Sendable {
     let name: String
     /// Exact local/configured model used for the call. It stays local;
-    /// analytics allow-lists it before sending anything.
     let model: String?
     /// How many characters of prompt this backend can be trusted to read
     /// whole, when that is fewer than the callers' own default. Callers cut

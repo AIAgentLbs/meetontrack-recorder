@@ -45,11 +45,6 @@ enum Summarizer {
         let backends = MeetingEgress.backends(for: .summary)
         guard !backends.isEmpty else {
             log("summary skipped — no backend available")
-            Analytics.track(.summaryFailed, [
-                .backend: .text(settings.backend),
-                .reason: .text(Analytics.Reason.noKey.rawValue),
-                .outcome: .text(Analytics.Outcome.deferred.rawValue),
-            ])
             return nil
         }
         // Whether any backend failed in a way that passes. If one did, the
@@ -59,7 +54,6 @@ enum Summarizer {
         // one that wasn't may well answer. Only when every backend failed for
         // good, or the later runs have run out, is the summary given up on.
         var attempt = ChainAttempt()
-        var lastReason = Analytics.Reason.unknown
 
         // Whatever we know about the meeting, above the transcript. Names in
         // particular: given a participant list, the summarizer writes "Anna
@@ -83,24 +77,12 @@ enum Summarizer {
                     SessionState.Key.summaryDeferrals: nil,
                     SessionState.Key.summaryStale: nil,
                 ])
-                Analytics.track(.summaryFinished, [
-                    .backend: .text(backend.name),
-                    .model: .text(AnalyticsCatalogue.summaryModel(
-                        backend: backend.name, model: backend.model)),
-                ])
                 return backend.name
             } catch {
                 // Falling through is the expected path when a subscription is
                 // spent, so say which kind of failure this was — otherwise a
                 // healthy hand-off reads like something broke.
                 attempt.note(error, from: backend)
-                lastReason = Analytics.reason(for: error)
-                Analytics.track(.summaryBackendFailed, [
-                    .backend: .text(backend.name),
-                    .model: .text(AnalyticsCatalogue.summaryModel(
-                        backend: backend.name, model: backend.model)),
-                    .reason: .text(lastReason.rawValue),
-                ])
                 log(LLMError.isUsageLimit(error)
                     ? "\(backend.name) is out of allowance — trying the next backend"
                     : "summary via \(backend.name) failed: \(error)")
@@ -117,26 +99,17 @@ enum Summarizer {
             fingerprintKey: SessionState.Key.summaryFailedFor,
             countKey: SessionState.Key.summaryDeferrals,
             fingerprint: MeetingEgress.fingerprint(for: .summary)))
-        let deferred: Bool
         switch verdict {
         case .deferred:
-            deferred = true
             log("no backend answered, and at least one could not be reached — summary deferred, "
                 + "will be retried later")
         case .gaveUp(let deferrals?):
-            deferred = false
             log("no backend has answered in \(deferrals) tries — giving up on the summary until "
                 + "the summary settings, keys or backends change")
         case .gaveUp(nil):
-            deferred = false
             log("every backend failed for good — giving up on the summary until the "
                 + "summary settings, keys or backends change")
         }
-        Analytics.track(.summaryFailed, [
-            .backend: .text(settings.backend),
-            .reason: .text(lastReason.rawValue),
-            .outcome: .text((deferred ? Analytics.Outcome.deferred : .gaveUp).rawValue),
-        ])
         return nil
     }
 

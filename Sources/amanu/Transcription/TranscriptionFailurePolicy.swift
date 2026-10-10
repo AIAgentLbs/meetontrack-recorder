@@ -51,26 +51,6 @@ enum TranscriptionFailurePolicy {
         return looksLikeNetworkTrouble(error)
     }
 
-    static func reason(for error: Error) -> Analytics.Reason {
-        if looksLikeNetworkTrouble(error) { return .noNetwork }
-        switch error {
-        case is EnginePreparationFailed: return .noModel
-        case is EngineResolver.EngineUnavailable: return .noKey
-        case let failure as CloudHTTP.Failure:
-            switch failure {
-            case .unauthorized: return .noKey
-            case .rejected: return .refused
-            case .unavailable: return .httpError
-            case .malformed: return .unknown
-            }
-        case let failure as TranscriptionFailure where failure.isEnvironmental:
-            return .noKey
-        case let failure as TranscriptionFailure where failure.isPermanent:
-            return .refused
-        default:
-            return Analytics.reason(for: error)
-        }
-    }
 
     /// Count a failure against the session, and retire it once retrying has
     /// stopped being reasonable — either because the error can't be fixed by
@@ -89,20 +69,9 @@ enum TranscriptionFailurePolicy {
         _ error: Error, for dir: URL, engine: TranscriptionEngine?, notify: Bool = true
     ) -> Outcome {
         func log(_ message: String) { appendSessionLog(message, to: dir) }
-        let engineName = engine?.name ?? Config.transcriptionEngine()
-        func report(_ outcome: Analytics.Outcome) {
-            Analytics.track(.transcriptFailed, [
-                .engine: .text(engineName),
-                .model: .text(AnalyticsCatalogue.transcriptionModel(
-                    engine: engineName, provenance: engine?.model ?? "")),
-                .reason: .text(reason(for: error).rawValue),
-                .outcome: .text(outcome.rawValue),
-            ])
-        }
 
         if isEnvironmental(error) {
             SessionState.update(dir, with: [SessionState.Key.transcriptionDeferred: true])
-            report(.deferred)
             log("not counted against this recording — the problem is this Mac's, "
                 + "and the recording is offered again once there is more to transcribe")
             if notify {
@@ -120,7 +89,6 @@ enum TranscriptionFailurePolicy {
         let attempts =
             (SessionState.value(dir, SessionState.Key.transcriptionAttempts) as? Int ?? 0) + 1
         let gaveUp = permanent || attempts >= maxAttempts
-        report(gaveUp ? .gaveUp : .deferred)
         var fields: [String: Any?] = [SessionState.Key.transcriptionAttempts: attempts,
             SessionState.Key.transcriptionDeferred: gaveUp ? nil : true]
 

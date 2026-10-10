@@ -35,7 +35,7 @@ enum ConfigWatch {
     }
 
     /// Announces an edit made to the file by anyone other than this program —
-    /// an editor, `amanu analytics off` from a terminal, a sync tool.
+    /// an editor, a command-line settings change, or a sync tool.
     ///
     /// `didChange` only ever came from `Config.update`, which was enough while
     /// every window was the only writer. It stopped being enough the day a

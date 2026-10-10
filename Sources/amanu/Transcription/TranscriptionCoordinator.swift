@@ -292,11 +292,6 @@ actor TranscriptionCoordinator {
             else { throw error }
             let local = Config.transcriptionLocalEngine()
             log(dir, "cloud transcription failed (\(error)) — retrying locally")
-            Analytics.track(.transcriptFallback, [
-                .fromEngine: .text(failed.name),
-                .toEngine: .text(local),
-                .reason: .text(Analytics.reason(for: error).rawValue),
-            ])
             fallbackUsed = true
             engine = try await transcribe(dir, with: try await engines.localFallback())
         }
@@ -308,12 +303,6 @@ actor TranscriptionCoordinator {
         // Outside `transcribe` rather than at the end of it because both take
         // the session's claim, and a claim held while asking for a second one
         // would refuse itself.
-        Analytics.track(.transcriptFinished, [
-            .engine: .text(engine.name),
-            .model: .text(AnalyticsCatalogue.transcriptionModel(
-                engine: engine.name, provenance: engine.model)),
-            .fallbackUsed: .flag(fallbackUsed),
-        ])
         await PostProcessor.finish(dir)
         notifyUser(
             title: localised("amanu — transcript ready", "amanu — расшифровка готова"),

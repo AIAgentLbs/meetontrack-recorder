@@ -49,7 +49,6 @@ enum SetupState {
         let wasPending = isPending(at: stateURL)
         write(["version": current, "completed_at": ISO8601DateFormatter().string(from: Date())], at: stateURL)
         guard wasPending else { return false }
-        Analytics.track(.setupCompleted, [.setupVersion: .number(Double(current))])
         return true
     }
 

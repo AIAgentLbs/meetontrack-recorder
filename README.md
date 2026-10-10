@@ -102,11 +102,7 @@ resumed later instead of being silently dropped. A summary or naming pass that
 keeps reaching a model without getting an answer stops after five tries, until its
 settings, keys or backends change.
 
-Anonymous product-usage reporting is enabled by default with a random install
-UUID. The last control in first-run setup, and the same control in Settings,
-turns it off. Recordings, transcripts, summaries, calendar contents, names,
-paths, keys, and error text are never included. The complete event and field
-list is public in [What Amanu sends](docs/analytics.md).
+This distribution does not collect or send product-usage statistics.
 
 ## What a meeting leaves behind
 
@@ -395,7 +391,6 @@ only values that differ from the defaults. A compact example:
 {
   "recordings_dir": "~/Recordings",
   "keep_audio": false,
-  "analytics": true,
   "interface_language": "auto",
   "transcription": {
     "enabled": true,
@@ -427,7 +422,7 @@ only values that differ from the defaults. A compact example:
 
 - `recordings_dir` selects the session folder; `keep_audio` retains the compact
   stereo archive after a successful transcript; `on_stop` is a shell command
-  run after processing; `analytics` controls anonymous product-usage reporting.
+  run after processing; product-usage reporting is not included.
 - `on_stop` gets the session folder as its only argument and runs once per
   transcript, after naming and summarizing have had their pass — done,
   turned off, failed, or deferred for want of a model (a summary that arrives
@@ -521,7 +516,6 @@ A compact Windows example for local processing:
 ```json
 {
   "keep_audio": true,
-  "analytics": false,
   "interface_language": "auto",
   "transcription": {
     "engine": "parakeet",
@@ -565,7 +559,7 @@ before using this example offline.
   far-end speech. Apple's `mic_voice_processing` and LocalVQE's
   `offline_echo_cancellation` are macOS-only settings.
 - `start_at_login`, `tray_icon`, and `taskbar_icon` control Windows startup and
-  appearance. `recordings_dir`, `keep_audio`, `analytics`, `interface_language`,
+  appearance. `recordings_dir`, `keep_audio`, `interface_language`,
   and `user_name` have the same purposes as on macOS.
 - `on_stop` is an object with `executable` and `arguments`, rather than a shell
   command. `{session}` in an argument expands to the meeting folder. For

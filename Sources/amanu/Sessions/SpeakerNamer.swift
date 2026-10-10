@@ -98,9 +98,6 @@ enum SpeakerNamer {
         // reason as the summary: a bad answer from one reachable backend must
         // not write off the one that was merely offline.
         var attempt = ChainAttempt()
-        var lastBackend = route.preference
-        var lastModel: String?
-        var lastReason = Analytics.Reason.unknown
 
         for backend in backends {
             do {
@@ -132,18 +129,10 @@ enum SpeakerNamer {
                 let finished = finish(fresh, transcript: transcript, dir: dir, log: log)
                 if let finished {
                     log("named \(finished.namedCount) of \(labels.count) speaker(s)")
-                    Analytics.track(.speakerNamesFinished, [
-                        .backend: .text(backend.name),
-                        .model: .text(AnalyticsCatalogue.summaryModel(
-                            backend: backend.name, model: backend.model)),
-                    ])
                 }
                 return finished
             } catch {
                 attempt.note(error, from: backend)
-                lastBackend = backend.name
-                lastModel = backend.model
-                lastReason = Analytics.reason(for: error)
                 log(LLMError.isUsageLimit(error)
                     ? "\(backend.name) is out of allowance — trying the next backend"
                     : "naming via \(backend.name) failed: \(error)")
@@ -158,28 +147,17 @@ enum SpeakerNamer {
             fingerprintKey: SessionState.Key.speakersFailedFor,
             countKey: SessionState.Key.speakersDeferrals,
             fingerprint: MeetingEgress.fingerprint(for: .speakerNames)))
-        let deferred: Bool
         switch verdict {
         case .deferred:
-            deferred = true
             log("no backend answered, and at least one could not be reached — naming deferred, "
                 + "will be retried later")
         case .gaveUp(let deferrals?):
-            deferred = false
             log("no backend has answered in \(deferrals) tries — giving up on speaker names "
                 + "until the naming settings, keys or backends change")
         case .gaveUp(nil):
-            deferred = false
             log("every backend failed for good — giving up on speaker names until the "
                 + "naming settings, keys or backends change")
         }
-        Analytics.track(.speakerNamesFailed, [
-            .backend: .text(lastBackend),
-            .model: .text(AnalyticsCatalogue.summaryModel(
-                backend: lastBackend, model: lastModel)),
-            .reason: .text(lastReason.rawValue),
-            .outcome: .text((deferred ? Analytics.Outcome.deferred : .gaveUp).rawValue),
-        ])
         return nil
     }
 

@@ -238,7 +238,6 @@ struct SettingsSchemaTests {
             "menu_bar_icon",
             "dock_icon",
             // The final, default-on switch in both Setup and Settings.
-            "analytics",
         ])
     }
 
@@ -329,7 +328,6 @@ struct SettingsSchemaTests {
         #expect(schema(.keepAudio) == .flag(Config.keepAudio()))
         #expect(schema(.transcriptionEngine) == .string(Config.transcriptionEngine()))
         #expect(schema(.systemAudio) == .string(Config.systemAudioScope()))
-        #expect(schema(.analytics) == .flag(AnalyticsIdentity.isEnabled()))
     }
 
     /// A setting whose default is described in words has no value to fall

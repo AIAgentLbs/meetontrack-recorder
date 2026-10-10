@@ -212,7 +212,6 @@ final class SetupForm: NSObject, NSTextFieldDelegate {
         return label
     }()
     private let autoRecord = NSSwitch()
-    private let analytics = NSSwitch()
 
     /// What is wrong with the config file, above everything else in the form:
     /// while it stands, the switches below show defaults rather than the
@@ -289,9 +288,6 @@ final class SetupForm: NSObject, NSTextFieldDelegate {
         // without anyone opening this form again.
         form.addArrangedSubview(SetupLayout.box([autoRecordRow()]))
 
-        // Last in the form so the default-on reporting choice is visible on
-        // first setup and remains easy to change when setup is reopened.
-        form.addArrangedSubview(SetupLayout.box([analyticsRow()]))
 
         for view in form.arrangedSubviews {
             view.widthAnchor.constraint(
@@ -305,7 +301,7 @@ final class SetupForm: NSObject, NSTextFieldDelegate {
             (cloudSwitch, "transcription.cloud"), (localSwitch, "transcription.local"),
             (liveTranscription, "transcription.live"), (keepAudio, "files.keep-audio"),
             (summariesOn, "summary.enabled"), (menuBarIcon, "icons.menu-bar"),
-            (dockIcon, "icons.dock"), (autoRecord, "auto-record"), (analytics, "analytics"),
+            (dockIcon, "icons.dock"), (autoRecord, "auto-record"),
         ] {
             toggle.identifier = NSUserInterfaceItemIdentifier(name)
         }
@@ -820,23 +816,6 @@ final class SetupForm: NSObject, NSTextFieldDelegate {
                 lines: 2, width: 520))
     }
 
-    private func analyticsRow() -> NSView {
-        analytics.target = self
-        analytics.action = #selector(analyticsToggled)
-        return SetupLayout.row(
-            leading: analytics,
-            title: SetupLayout.title(localised(
-                "Send usage statistics",
-                "Отправлять статистику об использовании")),
-            detail: SetupLayout.detail(
-                localised(
-                    "Feature usage with a random installation identifier; no meeting content.",
-                    "Использование функций со случайным идентификатором установки; без содержимого встреч."),
-                lines: 2, width: 520),
-            trailing: [link(
-                localised("What exactly", "Что именно"),
-                "https://github.com/gsamat/amanu/blob/master/docs/analytics.md")])
-    }
 
     private func link(_ title: String, _ url: String) -> NSButton {
         SetupLayout.link(title, url, target: self, action: #selector(linkClicked(_:)))
@@ -1024,7 +1003,6 @@ final class SetupForm: NSObject, NSTextFieldDelegate {
             refresh()
             return
         }
-        Analytics.track(.modelDownloadStarted, [.asset: .text("nemotron-live")])
         liveDownloading = true
         liveStatus.stringValue = localised("preparing download…", "готовлюсь скачивать…")
         refresh()
@@ -1039,13 +1017,8 @@ final class SetupForm: NSObject, NSTextFieldDelegate {
                     }
                 }
                 if liveModelStore.isReady(language: prompt) {
-                    Analytics.track(.modelDownloadFinished, [.asset: .text("nemotron-live")])
                     liveStatus.stringValue = localised("downloaded", "скачана")
                 } else {
-                    Analytics.track(.modelDownloadFailed, [
-                        .asset: .text("nemotron-live"),
-                        .reason: .text(Analytics.Reason.noModel.rawValue),
-                    ])
                     liveStatus.stringValue = localised(
                         "download incomplete — turn off and on to retry",
                         "скачалось не всё — выключите и включите, чтобы повторить")
@@ -1053,10 +1026,6 @@ final class SetupForm: NSObject, NSTextFieldDelegate {
             } catch is CancellationError {
                 liveStatus.stringValue = localised("download paused", "скачивание остановлено")
             } catch {
-                Analytics.track(.modelDownloadFailed, [
-                    .asset: .text("nemotron-live"),
-                    .reason: .text(Analytics.reason(for: error).rawValue),
-                ])
                 liveStatus.stringValue =
                     localised("download failed: ", "не удалось скачать: ")
                         + error.localizedDescription
@@ -1072,9 +1041,6 @@ final class SetupForm: NSObject, NSTextFieldDelegate {
             path: ["auto_record", "enabled"], value: autoRecord.state == .on ? nil : false)
     }
 
-    @objc private func analyticsToggled() {
-        Config.update(path: ["analytics"], value: analytics.state == .on ? nil : false)
-    }
 
     @objc private func summariesToggled() {
         Config.update(path: ["summary", "enabled"], value: summariesOn.state == .on ? nil : false)
@@ -1229,8 +1195,6 @@ final class SetupForm: NSObject, NSTextFieldDelegate {
 
     private func downloadGigaAMIfNeeded() {
         guard gigaAMModelStore.bytesOnDisk == 0, gigaAMDownloadTask == nil else { return }
-        let asset = "gigaam-v3-e2e-ctc-q8_0"
-        Analytics.track(.modelDownloadStarted, [.asset: .text(asset)])
         parakeetBar.minValue = 0
         parakeetBar.maxValue = 1
         parakeetBar.doubleValue = 0
@@ -1258,14 +1222,9 @@ final class SetupForm: NSObject, NSTextFieldDelegate {
                         }
                     }
                 }
-                Analytics.track(.modelDownloadFinished, [.asset: .text(asset)])
             } catch is CancellationError {
                 // The chosen engine remains selected and can resume next time.
             } catch {
-                Analytics.track(.modelDownloadFailed, [
-                    .asset: .text(asset),
-                    .reason: .text(Analytics.reason(for: error).rawValue),
-                ])
                 localDownloadErrors["gigaam"] =
                     localised("download failed: ", "не удалось скачать: ") + "\(error)"
             }
@@ -1280,7 +1239,6 @@ final class SetupForm: NSObject, NSTextFieldDelegate {
 
     private func downloadWhisperIfNeeded() {
         guard whisperModelStore.bytesOnDisk == 0, whisperDownloadTask == nil else { return }
-        Analytics.track(.modelDownloadStarted, [.asset: .text("whisper-large-v3-turbo-q5_0")])
         parakeetBar.minValue = 0
         parakeetBar.maxValue = 1
         parakeetBar.doubleValue = 0
@@ -1310,17 +1268,10 @@ final class SetupForm: NSObject, NSTextFieldDelegate {
                         }
                     }
                 }
-                Analytics.track(.modelDownloadFinished, [
-                    .asset: .text("whisper-large-v3-turbo-q5_0"),
-                ])
             } catch is CancellationError {
                 // Closing setup pauses an optional download without turning
                 // the chosen engine back into another one.
             } catch {
-                Analytics.track(.modelDownloadFailed, [
-                    .asset: .text("whisper-large-v3-turbo-q5_0"),
-                    .reason: .text(Analytics.reason(for: error).rawValue),
-                ])
                 self.localDownloadErrors["whisper"] =
                     localised("download failed: ", "не удалось скачать: ") + "\(error)"
             }
@@ -1336,20 +1287,13 @@ final class SetupForm: NSObject, NSTextFieldDelegate {
     private func downloadParakeetIfNeeded() {
         guard !parakeetIsHere() else { return }
         guard parakeetDownload == nil else { return }
-        let asset = Config.transcriptionModel() == "v2" ? "parakeet-v2" : "parakeet-v3"
-        Analytics.track(.modelDownloadStarted, [.asset: .text(asset)])
         watchParakeetSize()
         let fetch = fetchParakeet
         parakeetDownload = Task { [weak self] in
             var failure: String?
             do {
                 try await fetch()
-                Analytics.track(.modelDownloadFinished, [.asset: .text(asset)])
             } catch {
-                Analytics.track(.modelDownloadFailed, [
-                    .asset: .text(asset),
-                    .reason: .text(Analytics.reason(for: error).rawValue),
-                ])
                 failure = localised("download failed: ", "не удалось скачать: ") + "\(error)"
             }
             guard let self else { return }
@@ -1773,7 +1717,6 @@ final class SetupForm: NSObject, NSTextFieldDelegate {
 
         let autoRecordOn = Config.flag(.autoRecordEnabled, in: config)
         autoRecord.state = autoRecordOn ? .on : .off
-        analytics.state = AnalyticsIdentity.isEnabled() ? .on : .off
 
         let problems = showsConfigProblems ? Config.problems() : []
         configProblems.stringValue = problems.map(\.explanation).joined(separator: "\n")

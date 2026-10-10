@@ -7,14 +7,14 @@ import Testing
 /// A config file that cannot be parsed.
 ///
 /// It used to read exactly like no file at all: every setting fell back to its
-/// default — analytics on, the engine `auto` and so the cloud — and the next
+/// default — the engine `auto` and so the cloud — and the next
 /// switch anybody touched wrote that one key over the whole file. These are the
 /// promises that replaced that: the file is never written over, nothing that
-/// could send a meeting anywhere runs, analytics is off, every surface says so,
+/// could send a meeting anywhere runs, every surface says so,
 /// and it all comes back when the file does.
 @Suite("A config file that cannot be read")
 struct ConfigFileTests {
-    static let broken = #"{ "analytics": false, "transcription": { "engine": "parakeet" "#
+    static let broken = #"{ "keep_audio": false, "transcription": { "engine": "parakeet" "#
 
     // MARK: - telling the cases apart
 
@@ -56,26 +56,18 @@ struct ConfigFileTests {
 
     @Test("Once the file is fixed, settings are saved into it again", .freshHome(config: broken))
     func writesResumeWhenFixed() throws {
-        try Home.current.writeConfig(["analytics": false])
+        try Home.current.writeConfig(["system_audio": "all"])
         #expect(Config.update(path: ["keep_audio"], value: true))
         guard case .parsed(let json) = Config.file() else {
             Issue.record("the fixed file no longer parses")
             return
         }
-        #expect(json["analytics"] as? Bool == false, "the write lost what was already there")
+        #expect(json["system_audio"] as? String == "all", "the write lost what was already there")
         #expect(json["keep_audio"] as? Bool == true)
     }
 
     // MARK: - nothing leaves the Mac
 
-    @Test("Analytics is off while the file is broken, whatever the default", .freshHome)
-    func analyticsIsOff() throws {
-        #expect(AnalyticsIdentity.isEnabled(), "no file means the default, which is on")
-        try Home.current.writeConfig(text: Self.broken)
-        #expect(!AnalyticsIdentity.isEnabled())
-        try Home.current.writeConfig(["analytics": true])
-        #expect(AnalyticsIdentity.isEnabled())
-    }
 
     /// An engine that notes being asked, which is all this needs to know.
     private actor CountingEngine: TranscriptionEngine {

@@ -87,7 +87,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         onTerminate?()
-        Analytics.flushOnExit()
     }
 
     /// The app menu's **Setup…**, kept so that it can be taken away once the
