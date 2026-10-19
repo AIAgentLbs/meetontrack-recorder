@@ -1,4 +1,16 @@
-# Amanu agent instructions
+# MeetOnTrack capture agent instructions
+
+## Private distribution
+
+This is the independent private capture copy for MeetOnTrack. The product-facing
+name is MeetOnTrack by aiagentlbs.com. Keep upstream copyright/license attribution
+in shipped legal notices; do not use upstream branding in setup, tray or recording UI.
+Internal namespaces and persisted paths are compatibility details, not rename targets.
+The main `meeting-copilot-private-copy` repository packages the native capture,
+web assistant and embedded runtime together. Its checksum-pinned installer is the
+distribution channel. Do not publish to upstream update feeds or use upstream signing.
+`meetontrack-acceptance.yml` checks a managed Windows candidate only; hardware
+recording and complete installer acceptance are still required on the owner's host.
 
 ## Windows release source
 
@@ -9,7 +21,7 @@
 
 ## Release installer filenames
 
-- Future Windows releases must publish the installer with its version in the filename: `Amanu-<version>-Setup.exe` (for example, `Amanu-0.6.4-Setup.exe`), using the root `VERSION` file.
+- Standalone native Windows installers, if published, must use `MeetOnTrack-<version>-Setup.exe`. The integrated distribution uses the versioned archive named by the main repository's packager.
 - Apply this name in Windows packaging and publication, website download links and `/win.exe`, checksums, and package manifests. The Velopack channel can remain `stable`; `stable` alone is not a sufficient installer filename.
 - Preserve already published release assets; apply this naming convention when preparing the next Windows release.
 

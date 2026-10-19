@@ -156,7 +156,7 @@ jobs:
           --mainExe Amanu.exe
           --packTitle "Amanu"
           --packAuthors Amanu
-          --icon windows/src/Amanu.App/Assets/Amanu.ico
+          --icon windows/src/Amanu.App/obj/MeetOnTrack.ico
           --channel stable
           --runtime win-x64
           --releaseNotes windows/RELEASE_NOTES.md
@@ -177,7 +177,7 @@ jobs:
             'pack', '--packId', 'Amanu', '--packVersion', '${{ env.AMANU_VERSION }}',
             '--packDir', '${{ runner.temp }}/amanu-publish', '--mainExe', 'Amanu.exe',
             '--packTitle', 'Amanu', '--packAuthors', 'Amanu',
-            '--icon', 'windows/src/Amanu.App/Assets/Amanu.ico',
+            '--icon', 'windows/src/Amanu.App/obj/MeetOnTrack.ico',
             '--channel', 'stable', '--runtime', 'win-x64',
             '--releaseNotes', 'windows/RELEASE_NOTES.md',
             '--outputDir', '${{ runner.temp }}/amanu-release',
@@ -199,7 +199,7 @@ jobs:
           --mainExe Amanu.exe
           --packTitle "Amanu"
           --packAuthors Amanu
-          --icon windows/src/Amanu.App/Assets/Amanu.ico
+          --icon windows/src/Amanu.App/obj/MeetOnTrack.ico
           --channel stable
           --runtime win-x64
           --releaseNotes windows/RELEASE_NOTES.md

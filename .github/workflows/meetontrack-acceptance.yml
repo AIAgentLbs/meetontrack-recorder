@@ -1,0 +1,38 @@
+name: MeetOnTrack Windows candidate checks
+on:
+  workflow_dispatch:
+  push:
+    branches: [feat/meeting-copilot-windows]
+    paths: ['windows/**', '.github/workflows/meetontrack-acceptance.yml']
+permissions:
+  contents: read
+jobs:
+  candidate:
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Core and live regression tests
+        shell: pwsh
+        run: |
+          dotnet test windows/tests/Amanu.Core.Tests/Amanu.Core.Tests.csproj -c Release
+          if ($LASTEXITCODE -ne 0) { throw 'Core tests failed' }
+          dotnet test windows/tests/Amanu.Live.Tests/Amanu.Live.Tests.csproj -c Release
+          if ($LASTEXITCODE -ne 0) { throw 'Live tests failed' }
+      - name: Build branded native UI
+        shell: pwsh
+        run: |
+          dotnet publish windows/src/Amanu.App/Amanu.App.csproj -c Release -r win-x64 --self-contained true -o candidate
+          if ($LASTEXITCODE -ne 0) { throw 'Native build failed' }
+          $product = (Get-Item candidate/MeetingCopilotCapture.exe).VersionInfo.ProductName
+          if ($product -ne 'MeetOnTrack Capture') { throw "Wrong product: $product" }
+          if (!(Test-Path windows/src/Amanu.App/obj/MeetOnTrack.ico)) { throw 'Generated icon missing' }
+      # Managed candidate only: native ASR runtimes are added by the main release
+      # packager. This artifact is NOT the end-user installer or audio acceptance.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: meetontrack-windows-managed-candidate
+          path: candidate/
+          retention-days: 7
