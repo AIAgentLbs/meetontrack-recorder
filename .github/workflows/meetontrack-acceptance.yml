@@ -2,7 +2,7 @@ name: MeetOnTrack Windows candidate checks
 on:
   workflow_dispatch:
   push:
-    branches: [feat/meeting-copilot-windows]
+    branches: [main]
     paths: ['windows/**', '.github/workflows/meetontrack-acceptance.yml']
 permissions:
   contents: read
