@@ -1,16 +1,24 @@
 # MeetOnTrack capture agent instructions
 
-## Private distribution
+## Distribution
 
-This is the independent private capture copy for MeetOnTrack. The product-facing
-name is MeetOnTrack by aiagentlbs.com. Keep upstream copyright/license attribution
-in shipped legal notices; do not use upstream branding in setup, tray or recording UI.
-Internal namespaces and persisted paths are compatibility details, not rename targets.
-The main `meeting-copilot-private-copy` repository packages the native capture,
-web assistant and embedded runtime together. Its checksum-pinned installer is the
-distribution channel. Do not publish to upstream update feeds or use upstream signing.
-`meetontrack-acceptance.yml` checks a managed Windows candidate only; hardware
-recording and complete installer acceptance are still required on the owner's host.
+This is the public MeetOnTrack recorder repository (MIT), derived from Amanu
+(`gsamat/amanu`). `master` mirrors upstream; MeetOnTrack work lands on `main`
+and upstream is merged from `master`. The product-facing name is MeetOnTrack by
+aiagentlbs.com. Keep upstream copyright/license attribution in shipped legal
+notices; do not use upstream branding in setup, tray or recording UI. Internal
+namespaces and persisted paths are compatibility details, not rename targets.
+The public `AIAgentLbs/meeting-copilot` repository packages the native capture,
+web assistant and embedded runtime together and hosts the releases. Do not
+publish to upstream update feeds or use upstream signing. Never commit secrets,
+private client data or meeting recordings.
+
+Owner rules shared with `meeting-copilot` (2026-10-20), see its `AGENTS.md`:
+no hardcoded AI or speech providers, models or model modes; one settings store
+`%USERPROFILE%\.config\meeting-copilot\config.json` /
+`~/.config/meeting-copilot/config.json` with one schema
+(`meeting-copilot/docs/config.schema.json`) and lock-protected
+read-modify-write that preserves keys a component does not own.
 
 ## Windows release source
 

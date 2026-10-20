@@ -1,4 +1,28 @@
-# Amanu
+# MeetOnTrack recorder
+
+Native meeting recorder for macOS (Swift) and Windows (C#) used by
+[MeetOnTrack](https://meetontrack.com/). The application that packages it, the
+local web assistant, installers and releases live in
+[AIAgentLbs/meeting-copilot](https://github.com/AIAgentLbs/meeting-copilot);
+download MeetOnTrack from its
+[Releases](https://github.com/AIAgentLbs/meeting-copilot/releases).
+
+This repository is derived from [Amanu](https://github.com/gsamat/amanu) by
+Andrew Jones and Samat Galimov (MIT, see [LICENSE](LICENSE)). The `master`
+branch mirrors upstream Amanu; MeetOnTrack work is on `main`. To pull upstream
+changes:
+
+```sh
+git remote add upstream https://github.com/gsamat/amanu.git
+git fetch upstream master && git push origin upstream/master:master
+git switch main && git merge master
+```
+
+The original Amanu README follows.
+
+---
+
+## Amanu (upstream)
 
 **Records and transcribes online meetings. Automatically.**
 
