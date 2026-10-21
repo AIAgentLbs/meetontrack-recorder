@@ -3,9 +3,9 @@
 Native meeting recorder for macOS (Swift) and Windows (C#) used by
 [MeetOnTrack](https://meetontrack.com/). The application that packages it, the
 local web assistant, installers and releases live in
-[AIAgentLbs/meeting-copilot](https://github.com/AIAgentLbs/meeting-copilot);
+[AIAgentLbs/meetontrack](https://github.com/AIAgentLbs/meetontrack);
 download MeetOnTrack from its
-[Releases](https://github.com/AIAgentLbs/meeting-copilot/releases).
+[Releases](https://github.com/AIAgentLbs/meetontrack/releases).
 
 This repository is derived from [Amanu](https://github.com/gsamat/amanu) by
 Andrew Jones and Samat Galimov (MIT, see [LICENSE](LICENSE)). The `master`

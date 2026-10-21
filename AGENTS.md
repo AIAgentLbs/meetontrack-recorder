@@ -13,16 +13,16 @@ and upstream is merged from `master`. The product-facing name is MeetOnTrack by
 aiagentlbs.com. Keep upstream copyright/license attribution in shipped legal
 notices; do not use upstream branding in setup, tray or recording UI. Internal
 namespaces and persisted paths are compatibility details, not rename targets.
-The public `AIAgentLbs/meeting-copilot` repository packages the native capture,
+The public `AIAgentLbs/meetontrack` repository packages the native capture,
 web assistant and embedded runtime together and hosts the releases. Do not
 publish to upstream update feeds or use upstream signing. Never commit secrets,
 private client data or meeting recordings.
 
-Owner rules shared with `meeting-copilot` (2026-10-20), see its `AGENTS.md`:
+Owner rules shared with `meetontrack` (2026-10-20), see its `AGENTS.md`:
 no hardcoded AI or speech providers, models or model modes; one settings store
 `%USERPROFILE%\.config\meeting-copilot\config.json` /
 `~/.config/meeting-copilot/config.json` with one schema
-(`meeting-copilot/docs/config.schema.json`) and lock-protected
+(`meetontrack/docs/config.schema.json`) and lock-protected
 read-modify-write that preserves keys a component does not own.
 
 ## Windows release source
