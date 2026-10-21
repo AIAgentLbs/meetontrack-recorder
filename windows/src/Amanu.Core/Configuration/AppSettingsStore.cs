@@ -90,35 +90,111 @@ public sealed class AppSettingsStore(string configPath, string homeDirectory)
         return new(settings, problems);
     }
 
-    /// <summary>Writes the settings, or refuses when the file on disk cannot be read.</summary>
+    /// <summary>
+    /// Writes what changed between <paramref name="previous"/> and
+    /// <paramref name="settings"/> into the file as it is on disk now, or refuses
+    /// when that file cannot be read. config.json is shared with the web server
+    /// and the Mac app, so every other key, nested ones included, and every newer
+    /// edit another program made since the last read, stays as it is. The read
+    /// and the replace happen under config.json.lock, the lock the web server
+    /// takes for its own read-modify-write.
+    /// </summary>
+    /// <param name="previous">The settings this change started from.</param>
     /// <exception cref="ConfigUnreadableException">The file is there and is not JSON.</exception>
-    public void Save(AppSettings settings)
+    public void Save(AppSettings settings, AppSettings previous)
     {
+        var directory = Path.GetDirectoryName(configPath);
+        if (!string.IsNullOrEmpty(directory)) Directory.CreateDirectory(directory);
+        using var _ = ExclusiveLock(configPath + ".lock");
+
+        var document = new JsonObject();
         if (File.Exists(configPath))
         {
+            JsonNode? root;
             try
             {
-                JsonNode.Parse(File.ReadAllText(configPath),
+                root = JsonNode.Parse(File.ReadAllText(configPath),
                     documentOptions: new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true });
             }
             catch (JsonException exception)
             {
                 throw new ConfigUnreadableException(ConfigProblem.UnreadableFile(Reason(exception)));
             }
+            if (root is JsonObject existing) document = existing;
+            else if (root is not null)
+                throw new ConfigUnreadableException(ConfigProblem.UnreadableFile(T("the top level is not an object", "верхний уровень — не объект")));
         }
 
-        var directory = Path.GetDirectoryName(configPath);
-        if (!string.IsNullOrEmpty(directory)) Directory.CreateDirectory(directory);
-        var changes = SettingsDocument.Changes(settings, Defaults);
+        ApplyChanges(document, SettingsDocument.ToNode(previous), SettingsDocument.ToNode(settings), SettingsDocument.ToNode(Defaults));
+
         var temporary = configPath + ".tmp-" + Guid.NewGuid().ToString("N");
         try
         {
-            File.WriteAllText(temporary, changes.ToJsonString(AppSettings.JsonOptions) + Environment.NewLine);
+            File.WriteAllText(temporary, document.ToJsonString(AppSettings.JsonOptions) + Environment.NewLine);
             File.Move(temporary, configPath, overwrite: true);
         }
         finally
         {
             if (File.Exists(temporary)) File.Delete(temporary);
+        }
+    }
+
+    /// <summary>
+    /// Byte 0 of the lock file, as the web server's msvcrt.locking takes it.
+    /// Waits about ten seconds, as msvcrt.locking does, then gives up.
+    /// </summary>
+    private static FileStream ExclusiveLock(string path)
+    {
+        var stream = new FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite | FileShare.Delete);
+        // ponytail: .NET has no byte-range lock on macOS; this store only runs on Windows.
+        if (OperatingSystem.IsMacOS()) return stream;
+        for (var attempt = 0; ; attempt++)
+        {
+            try
+            {
+                stream.Lock(0, 1);
+                return stream;
+            }
+            catch (IOException) when (attempt < 100)
+            {
+                Thread.Sleep(100);
+            }
+            catch
+            {
+                stream.Dispose();
+                throw;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Puts each value that differs between <paramref name="before"/> and
+    /// <paramref name="after"/> into <paramref name="target"/>. A value back at
+    /// its default is taken out, so the file keeps to the person's decisions.
+    /// </summary>
+    private static void ApplyChanges(JsonObject target, JsonObject before, JsonObject after, JsonObject? defaults)
+    {
+        foreach (var key in before.Select(entry => entry.Key).Union(after.Select(entry => entry.Key)).ToList())
+        {
+            before.TryGetPropertyValue(key, out var old);
+            after.TryGetPropertyValue(key, out var value);
+            if (JsonNode.DeepEquals(old, value)) continue;
+            JsonNode? fallback = null;
+            defaults?.TryGetPropertyValue(key, out fallback);
+            // Settings load case-insensitively, so every spelling of the key in the file is this key.
+            var names = target.Where(entry => string.Equals(entry.Key, key, StringComparison.OrdinalIgnoreCase)).Select(entry => entry.Key).ToList();
+            if (value is JsonObject || (value is null && old is JsonObject))
+            {
+                // Merge leaf by leaf, so keys this program never had in the object stay.
+                // The last spelling is the one the load reads.
+                var child = names.Select(name => target[name]).OfType<JsonObject>().LastOrDefault() ?? new JsonObject();
+                foreach (var name in names) target.Remove(name);
+                ApplyChanges(child, old as JsonObject ?? new JsonObject(), value as JsonObject ?? new JsonObject(), fallback as JsonObject);
+                if (value is not null || child.Count > 0) target[key] = child;
+                continue;
+            }
+            foreach (var name in names) target.Remove(name);
+            if (value is not null && !JsonNode.DeepEquals(value, fallback)) target[key] = value.DeepClone();
         }
     }
 
