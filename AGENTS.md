@@ -1,5 +1,10 @@
 # MeetOnTrack capture agent instructions
 
+## Task tracking
+
+Recorder tasks live in the maintainer's private tracker (project `MEETONTRACK`,
+owner decision 2026-10-21); this repository keeps no separate backlog.
+
 ## Distribution
 
 This is the public MeetOnTrack recorder repository (MIT), derived from Amanu
